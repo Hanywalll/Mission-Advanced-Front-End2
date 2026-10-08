@@ -6,6 +6,7 @@ import {
   addCourse as addReduxCourse,
   updateCourse as updateReduxCourse,
   deleteCourse as deleteReduxCourse,
+  enrollCourse as enrollReduxCourse,
 } from '../store/redux/courseReducer';
 
 /**
@@ -118,6 +119,13 @@ export function useCourses() {
     }
   };
 
+  // 3. Integrasi Beli / Daftar Kelas (Enroll Course) ke Redux State
+  const handleEnrollCourse = (course) => {
+    if (!course) return;
+    dispatch(enrollReduxCourse(course.id));
+    showToast(`🎉 Pembelian berhasil! Anda resmi terdaftar di kelas "${course.title}".`, 'success');
+  };
+
   // Filter dan Sorting Data dari Redux State
   const filteredCourses = coursesFromRedux
     .filter((course) => {
@@ -167,6 +175,7 @@ export function useCourses() {
     handleAddCourse,
     handleUpdateCourse,
     handleDeleteCourse,
+    handleEnrollCourse,
     showToast,
     closeToast,
   };

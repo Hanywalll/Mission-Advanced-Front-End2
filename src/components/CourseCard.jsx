@@ -54,10 +54,15 @@ export function CourseCard({ course, onEdit, onDelete, onViewDetail, layout = 'g
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+          <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
             <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider shadow-xs ${getCategoryBadgeClass(category)}`}>
               {category || 'Umum'}
             </span>
+            {course.isEnrolled && (
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500 text-white shadow-xs">
+                ✓ Terdaftar
+              </span>
+            )}
             {level && (
               <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur-xs text-white">
                 {level}
@@ -177,6 +182,11 @@ export function CourseCard({ course, onEdit, onDelete, onViewDetail, layout = 'g
           <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider shadow-xs ${getCategoryBadgeClass(category)}`}>
             {category || 'Umum'}
           </span>
+          {course.isEnrolled && (
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500 text-white shadow-xs">
+              ✓ Terdaftar
+            </span>
+          )}
           {discountPercent && (
             <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-600 text-white shadow-xs">
               -{discountPercent}%

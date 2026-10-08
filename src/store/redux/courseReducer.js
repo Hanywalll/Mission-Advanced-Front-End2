@@ -31,6 +31,13 @@ export const courseSlice = createSlice({
     deleteCourse: (state, action) => {
       return state.filter((item) => String(item.id) !== String(action.payload));
     },
+    // Reducer untuk status Beli/Daftar Kelas (Enroll Course)
+    enrollCourse: (state, action) => {
+      const target = state.find((item) => String(item.id) === String(action.payload));
+      if (target) {
+        target.isEnrolled = true;
+      }
+    },
   },
 });
 
@@ -40,6 +47,7 @@ export const {
   addCourse,
   updateCourse,
   deleteCourse,
+  enrollCourse,
 } = courseSlice.actions;
 
 // Aliases agar fleksibel sesuai variasi penamaan aksi

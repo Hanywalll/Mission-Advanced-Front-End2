@@ -33,6 +33,7 @@ export function App() {
     handleAddCourse,
     handleUpdateCourse,
     handleDeleteCourse,
+    handleEnrollCourse,
     closeToast,
   } = useCourseContext();
 
@@ -263,11 +264,17 @@ export function App() {
           setIsDetailModalOpen(false);
           setSelectedCourseForDetail(null);
         }}
-        course={selectedCourseForDetail}
+        course={
+          selectedCourseForDetail
+            ? reduxCourses.find((c) => String(c.id) === String(selectedCourseForDetail.id)) ||
+              selectedCourseForDetail
+            : null
+        }
         onEdit={(course) => {
           setSelectedCourseForEdit(course);
           setIsAddEditModalOpen(true);
         }}
+        onEnrollCourse={handleEnrollCourse}
       />
     </div>
   );
