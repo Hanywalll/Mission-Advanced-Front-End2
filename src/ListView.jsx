@@ -3,18 +3,20 @@ import { useSelector, useDispatch } from 'react-redux';
 import { getData } from './services/api';
 import { setCourses } from './store/redux/courseReducer';
 import CourseCard from './components/CourseCard';
-import { Inbox, Plus } from 'lucide-react';
+import { Inbox, Plus, RefreshCw } from 'lucide-react';
 
 /**
  * Komponen ListView
  * Sesuai instruksi STEP 4:
  * - Menampilkan data di komponen ListView menggunakan useSelector dari react-redux
  * - Menggunakan fungsi Get API (getData) dari folder services/api
+ * - Mendukung mode tampilan Grid dan Horizontal List yang responsif & modern
  */
 export function ListView({
   selectedCategory = 'Semua Kelas',
   searchQuery = '',
   sortBy = 'newest',
+  viewMode = 'grid', // 'grid' | 'list'
   onEdit,
   onDelete,
   onViewDetail,
@@ -105,12 +107,20 @@ export function ListView({
     );
   }
 
+  // Render berdasarkan viewMode (Grid atau Horizontal List)
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      className={
+        viewMode === 'list'
+          ? 'flex flex-col gap-4'
+          : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+      }
+    >
       {filteredCourses.map((course) => (
         <CourseCard
           key={course.id}
           course={course}
+          layout={viewMode}
           onEdit={onEdit}
           onDelete={onDelete}
           onViewDetail={onViewDetail}

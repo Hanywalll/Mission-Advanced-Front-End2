@@ -11,10 +11,12 @@ import CourseDetailModal from './components/CourseDetailModal';
 import Toast from './components/Toast';
 import Footer from './components/Footer';
 import ListView from './ListView';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, Cpu, Database, CheckCircle2 } from 'lucide-react';
 
 export function App() {
   const reduxCourses = useSelector((state) => state.courses || []);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+
   const {
     allCoursesCount,
     loading,
@@ -101,7 +103,7 @@ export function App() {
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50/60 flex flex-col font-sans text-gray-800 selection:bg-emerald-500 selection:text-white">
       {/* Toast Notification */}
       <Toast toast={toast} onClose={closeToast} />
 
@@ -110,30 +112,58 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Banner API & Redux Status Badge */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl text-xs text-emerald-900">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>
-              API Endpoint:{' '}
-              <code className="bg-white/80 px-2 py-0.5 rounded font-mono font-bold text-emerald-700">
-                {apiUrl}
+        {/* Sleek Telemetry & State Monitor Bar */}
+        <div className="mb-6 px-4 py-3 bg-white border border-gray-200/80 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Redux Indicator */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-semibold">
+              <Cpu className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Redux Toolkit Store</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+
+            {/* API Endpoint Indicator */}
+            <div className="inline-flex items-center gap-1.5 text-gray-600">
+              <Database className="w-3.5 h-3.5 text-gray-400" />
+              <span>Endpoint:</span>
+              <code className="px-2 py-0.5 rounded-lg bg-gray-100 font-mono font-bold text-gray-800">
+                {apiUrl}/courses
               </code>
-            </span>
-            <span className="hidden sm:inline bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-semibold">
-              Redux Toolkit ({reduxCourses.length} items)
-            </span>
+            </div>
+
+            {/* Total Synchronized Items */}
+            <div className="hidden sm:inline-flex items-center gap-1 text-gray-500">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>
+                <strong className="text-gray-900">{reduxCourses.length}</strong> items in global state
+              </span>
+            </div>
           </div>
-          <div className="text-[11px] text-emerald-700 font-medium">
-            Mendukung operasi <span className="font-bold">GET, ADD, UPDATE, DELETE</span> terintegrasi Redux
+
+          <div className="flex items-center gap-2">
+            <span className="hidden md:inline text-[11px] text-gray-400">
+              CRUD Operations: GET • ADD • EDIT • DELETE
+            </span>
+            <button
+              onClick={async () => {
+                try {
+                  await getData();
+                } catch {
+                  // ignore
+                }
+                fetchCourses();
+              }}
+              title="Sinkronisasi Ulang Data API"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              <RefreshCw className="w-3 h-3 text-gray-400 hover:text-emerald-600" />
+              <span>Sync</span>
+            </button>
           </div>
         </div>
 
         {/* Hero Section */}
-        <HeroBanner onExploreClick={scrollToCatalog} />
+        <HeroBanner onExploreClick={scrollToCatalog} totalCourses={reduxCourses.length} />
 
         {/* Categories, Search & Filter Section */}
         <CategoryFilter
@@ -143,14 +173,17 @@ export function App() {
           onSearchChange={setSearchQuery}
           sortBy={sortBy}
           onSortChange={setSortBy}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          totalResults={reduxCourses.length}
         />
 
         {/* Course Grid Area / ListView */}
         {loading ? (
           /* Loading State Skeleton */
-          <div className="py-16 flex flex-col items-center justify-center text-center">
+          <div className="py-20 flex flex-col items-center justify-center text-center">
             <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4" />
-            <p className="text-base font-semibold text-gray-700">Memuat data kelas dari API...</p>
+            <p className="text-base font-bold text-gray-800">Memuat data kelas dari API & Redux...</p>
             <p className="text-xs text-gray-400 mt-1">Mengambil respon JSON dari {apiUrl}/courses</p>
           </div>
         ) : error ? (
@@ -185,6 +218,7 @@ export function App() {
             selectedCategory={selectedCategory}
             searchQuery={searchQuery}
             sortBy={sortBy}
+            viewMode={viewMode}
             onEdit={handleOpenEditModal}
             onDelete={handleOpenDeleteModal}
             onViewDetail={handleOpenDetailModal}
