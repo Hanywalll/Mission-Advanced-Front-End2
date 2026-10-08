@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { getData } from './services/api';
 import { useCourseContext } from './context/CourseContext';
 import Navbar from './components/Navbar';
 import HeroBanner from './components/HeroBanner';
 import CategoryFilter from './components/CategoryFilter';
-import CourseCard from './components/CourseCard';
 import CourseModal from './components/CourseModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import Toast from './components/Toast';
 import Footer from './components/Footer';
-import { Loader2, AlertCircle, RefreshCw, Plus, Sparkles, Inbox } from 'lucide-react';
+import ListView from './ListView';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 
 export function App() {
+  const reduxCourses = useSelector((state) => state.courses || []);
   const {
-    courses,
     allCoursesCount,
     loading,
     actionLoading,
@@ -104,11 +106,11 @@ export function App() {
       <Toast toast={toast} onClose={closeToast} />
 
       {/* Navigation Header */}
-      <Navbar onOpenAddModal={handleOpenAddModal} totalCourses={allCoursesCount} />
+      <Navbar onOpenAddModal={handleOpenAddModal} totalCourses={reduxCourses.length || allCoursesCount} />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Banner API Status Badge */}
+        {/* Banner API & Redux Status Badge */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl text-xs text-emerald-900">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -121,9 +123,12 @@ export function App() {
                 {apiUrl}
               </code>
             </span>
+            <span className="hidden sm:inline bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-semibold">
+              Redux Toolkit ({reduxCourses.length} items)
+            </span>
           </div>
           <div className="text-[11px] text-emerald-700 font-medium">
-            Mendukung operasi <span className="font-bold">GET, ADD, UPDATE, DELETE</span> dinamis
+            Mendukung operasi <span className="font-bold">GET, ADD, UPDATE, DELETE</span> terintegrasi Redux
           </div>
         </div>
 
@@ -140,7 +145,7 @@ export function App() {
           onSortChange={setSortBy}
         />
 
-        {/* Course Grid Area */}
+        {/* Course Grid Area / ListView */}
         {loading ? (
           /* Loading State Skeleton */
           <div className="py-16 flex flex-col items-center justify-center text-center">
@@ -161,57 +166,34 @@ export function App() {
               <span className="font-bold text-gray-900">npm run server</span> (port 5000) atau jalankan <span className="font-bold text-gray-900">npm run dev:all</span>
             </p>
             <button
-              onClick={fetchCourses}
+              onClick={async () => {
+                try {
+                  await getData();
+                } catch {
+                  // ignore
+                }
+                fetchCourses();
+              }}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" /> Coba Muat Ulang
             </button>
           </div>
-        ) : courses.length === 0 ? (
-          /* Empty State */
-          <div className="py-16 px-6 text-center max-w-md mx-auto my-6 bg-white rounded-3xl border border-gray-200/80 shadow-xs">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-              <Inbox className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Tidak Ada Kelas Ditemukan</h3>
-            <p className="text-xs text-gray-500 mb-6">
-              {searchQuery || selectedCategory !== 'Semua Kelas'
-                ? 'Tidak ada kelas yang sesuai dengan filter atau kata kunci pencarian Anda.'
-                : 'Belum ada kelas yang terdaftar pada database API.'}
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              {(searchQuery || selectedCategory !== 'Semua Kelas') && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('Semua Kelas');
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-                >
-                  Reset Filter
-                </button>
-              )}
-              <button
-                onClick={handleOpenAddModal}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Tambah Kelas Baru
-              </button>
-            </div>
-          </div>
         ) : (
-          /* Course Grid List */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                onEdit={handleOpenEditModal}
-                onDelete={handleOpenDeleteModal}
-                onViewDetail={handleOpenDetailModal}
-              />
-            ))}
-          </div>
+          /* ListView Component displaying Redux state */
+          <ListView
+            selectedCategory={selectedCategory}
+            searchQuery={searchQuery}
+            sortBy={sortBy}
+            onEdit={handleOpenEditModal}
+            onDelete={handleOpenDeleteModal}
+            onViewDetail={handleOpenDetailModal}
+            onOpenAddModal={handleOpenAddModal}
+            onResetFilter={() => {
+              setSearchQuery('');
+              setSelectedCategory('Semua Kelas');
+            }}
+          />
         )}
       </main>
 

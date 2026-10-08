@@ -1,21 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
-import { courseService } from '../services/api/courseService';
+import { useDispatch, useSelector } from 'react-redux';
+import { getData, addData, editData, deleteData } from '../services/api';
+import {
+  setCourses as setReduxCourses,
+  addCourse as addReduxCourse,
+  updateCourse as updateReduxCourse,
+  deleteCourse as deleteReduxCourse,
+} from '../store/redux/courseReducer';
 
 /**
  * Custom Hook: useCourses
- * Mengelola state data kursus, loading, error handling, serta operasi CRUD (GET, ADD, UPDATE, DELETE)
+ * Mengintegrasikan State Management Redux Toolkit dengan fungsi API di services/api
+ * Sesuai instruksi STEP 3 & STEP 4:
+ * - Integrasi Get Data: getData dari services/api + setCourses ke Redux store + useSelector
+ * - Integrasi Add, Edit, Delete: memanggil addData, editData, deleteData dari services/api
  */
 export function useCourses() {
-  const [courses, setCourses] = useState([]);
+  const dispatch = useDispatch();
+  
+  // Mengambil state courses langsung dari Redux Store
+  const coursesFromRedux = useSelector((state) => state.courses || []);
+
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('Semua Kelas');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'price-low', 'price-high', 'rating'
-  const [toast, setToast] = useState(null); // { type: 'success' | 'error' | 'info', message: string }
+  const [toast, setToast] = useState(null);
 
-  // Helper untuk menampilkan notifikasi toast
+  // Helper Toast Notification
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
@@ -27,13 +41,15 @@ export function useCourses() {
     setToast(null);
   }, []);
 
-  // Fetch semua kursus dari API (GET)
+  // 1. Integrasi Get Data dari folder services/api dan dispatch ke Redux Store
   const fetchCourses = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await courseService.getAll();
-      setCourses(Array.isArray(data) ? data : []);
+      const data = await getData();
+      const courseList = Array.isArray(data) ? data : [];
+      // Panggil reducer pada Redux untuk menyimpan data hasil dari API ke state global
+      dispatch(setReduxCourses(courseList));
     } catch (err) {
       console.error('Error fetching courses:', err);
       setError(err.message || 'Gagal memuat daftar kursus dari API.');
@@ -41,19 +57,20 @@ export function useCourses() {
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [dispatch, showToast]);
 
-  // Initial load
+  // Initial load saat komponen pertama kali dirender
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
 
-  // Tambah Kursus Baru (ADD / POST)
+  // 2. Integrasi Add Data (POST) menggunakan fungsi Add API dari folder services/api
   const handleAddCourse = async (newCourseData) => {
     setActionLoading(true);
     try {
-      const created = await courseService.create(newCourseData);
-      setCourses((prev) => [created, ...prev]);
+      const created = await addData(newCourseData);
+      // Dispatch ke Redux reducer
+      dispatch(addReduxCourse(created));
       showToast(`Kelas "${created.title}" berhasil ditambahkan!`, 'success');
       return { success: true, data: created };
     } catch (err) {
@@ -65,14 +82,13 @@ export function useCourses() {
     }
   };
 
-  // Update Kursus (UPDATE / PUT)
+  // 2. Integrasi Edit Data (PUT) menggunakan fungsi Edit API dari folder services/api
   const handleUpdateCourse = async (id, updatedData) => {
     setActionLoading(true);
     try {
-      const updated = await courseService.update(id, updatedData);
-      setCourses((prev) =>
-        prev.map((item) => (String(item.id) === String(id) ? { ...item, ...updated } : item))
-      );
+      const updated = await editData(id, updatedData);
+      // Dispatch ke Redux reducer
+      dispatch(updateReduxCourse({ id, ...updated }));
       showToast(`Kelas "${updated.title}" berhasil diperbarui!`, 'success');
       return { success: true, data: updated };
     } catch (err) {
@@ -84,12 +100,13 @@ export function useCourses() {
     }
   };
 
-  // Hapus Kursus (DELETE)
+  // 2. Integrasi Delete Data (DELETE) menggunakan fungsi Delete API dari folder services/api
   const handleDeleteCourse = async (id) => {
     setActionLoading(true);
     try {
-      await courseService.delete(id);
-      setCourses((prev) => prev.filter((item) => String(item.id) !== String(id)));
+      await deleteData(id);
+      // Dispatch ke Redux reducer
+      dispatch(deleteReduxCourse(id));
       showToast('Kelas berhasil dihapus!', 'success');
       return { success: true };
     } catch (err) {
@@ -101,8 +118,8 @@ export function useCourses() {
     }
   };
 
-  // Filter dan Sorting Data di Client Side untuk responsivitas instan
-  const filteredCourses = courses
+  // Filter dan Sorting Data dari Redux State
+  const filteredCourses = coursesFromRedux
     .filter((course) => {
       const matchCategory =
         selectedCategory === 'Semua Kelas' ||
@@ -134,7 +151,8 @@ export function useCourses() {
 
   return {
     courses: filteredCourses,
-    allCoursesCount: courses.length,
+    allCourses: coursesFromRedux,
+    allCoursesCount: coursesFromRedux.length,
     loading,
     actionLoading,
     error,
